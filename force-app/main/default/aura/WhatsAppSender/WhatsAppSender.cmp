@@ -1,0 +1,290 @@
+<aura:component controller="TwilioAPISendInterface" implements="force:appHostable,flexipage:availableForAllPageTypes,flexipage:availableForRecordHome,force:hasRecordId,forceCommunity:availableForAllPageTypes" access="global" >
+	<lightning:notificationsLibrary aura:id="notifLib"/>
+    <aura:attribute name="message" type="string"/>
+    <aura:attribute name="qstStartTime" type="Date"/>
+    <aura:attribute name="game" type="Game__c" access="public" description="This game record" />
+    <aura:attribute Name="questions" type="Question__c[]" access="public" />
+    <aura:attribute Name="selquest" type="Question__c" access="public" />
+    <aura:attribute name="contact" type="Contact" default="{'sobjectType': 'Contact'}"/>
+    <aura:attribute name="p1Score" type="Integer" access="public" default="0" />
+    <aura:attribute name="p2Score" type="Integer" access="public" default="0" />
+    <aura:attribute name="p3Score" type="Integer" access="public" default="0" />
+    <aura:attribute name="p4Score" type="Integer" access="public" default="0" />
+    <aura:attribute name="numofquest" type="Integer" access="public" default="0" />
+    <aura:attribute name="iter" type="Integer" access="public" default="0" />
+    <aura:attribute name="crctAnswer" type="String" />
+    <aura:attribute name="regCon" type="String" default="" />
+    <aura:attribute name="unregp1" type="String" default="" /> 
+    <aura:attribute name="unregp2" type="String" default="" /> 
+    <aura:attribute name="unregp3" type="String" default="" /> 
+    <aura:attribute name="unregp4" type="String" default="" /> 
+    <aura:attribute name="winner" type="String" /> 
+    <aura:attribute name="rightAnsBy" type="String" default="" />
+    <aura:attribute name="rightAnsIn" type="Integer" access="public" default="0" />
+    <aura:attribute name="isp1Contact" type="Boolean" default="false"/>
+    <aura:attribute name="isp2Contact" type="Boolean" default="false"/>
+    <aura:attribute name="isp3Contact" type="Boolean" default="false"/>
+    <aura:attribute name="isp4Contact" type="Boolean" default="false"/>
+
+    
+    <div class="slds-p-around_big slds-align_absolute-center slds-show" aura:id="showInitialButton">
+        <lightning:button variant="destructive-text" label="Start Game" title="Start Game" onclick="{!c.handleshowInstructions }" />
+    </div>
+
+    <lightning:card title="New Game Starting Now…" aura:id="showInstruction" class="slds-hide">
+    <div class="slds-p-around_big" >
+        <p> Game Instructions: <br/>
+            1. Send Whatsapp message "join mighty-stared" to +14155238886<br/>
+            2. Answer should be only correct index of the options. Like A/B/C/D.<br/>
+            2. Participant with most correct answers and who answer fastest win<br/>
+            3. Max 4 participant can play a game<br/><br/>
+
+        </p>
+        <lightning:button variant="success" label="Let's PLAY" title="Let's PLAY" onclick="{! c.handlegetGame }" />
+    </div>
+	</lightning:card>
+    
+    <lightning:card aura:id="showGameId" class="slds-hide">
+        <div>
+            <header>
+                <h2 id="modal-heading-01 $font-weight-bold">Send Whatsapp Message the GameId - {!v.game.Name}</h2><br/><br/>
+                <lightning:button variant="destructive-text" label="Add Participants" title="Add Participants" onclick="{!c.handleAddPart}" />
+            </header>
+        </div>
+    </lightning:card>
+    
+    
+    <lightning:card title="Participant List" aura:id="showPartcipants" class="slds-hide">
+        <div class="slds-container--large slds-grid slds-wrap">
+            <div class="slds-size_3-of-5">
+                <table class="slds-table slds-table_cell-buffer slds-table_bordered slds-table_col-bordered" aria-labelledby="element-with-table-label other-element-with-table-label">
+                    <thead>
+                    <tr class="slds-line-height_reset">
+                        <th class="" scope="col">
+                        <div class="slds-truncate" title="Name">Sl.No.</div>
+                        </th>
+                        <th class="" scope="col">
+                        <div class="slds-truncate" title="Phone">Phone</div>
+                        </th>
+                        <th class="" scope="col">
+                        <div class="slds-truncate" title="Name">Name</div>
+                        </th>
+                        <th class="" scope="col">
+                        <div class="slds-truncate" title="Score">Score</div>
+                        </th>
+                        <th class="" scope="col">
+                        <div class="slds-truncate" title="Action Required">Action Required</div>
+                        </th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="slds-truncate">
+                            <td data-label="Sl.No.">
+                            <div class="slds-truncate" title="Participant 1">Participant 1</div>
+                            </td>
+                            <td data-label="Phone">
+                                <aura:if isTrue="{!not(empty(v.game.Participant_1__c))}">
+                                    <div class="slds-truncate" title="{!v.game.Participant_1__r.Phone}">{!v.game.Participant_1__r.Phone}</div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate" title="{!v.unregp1}">{!v.unregp1}</div>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td data-label="Name">
+                            <div class="slds-truncate" title="{!v.game.Participant_1__r.Name}">{!v.game.Participant_1__r.Name}</div>
+                            </td>
+                            <td data-label="Score">
+                            <div class="slds-truncate" title="{!v.p1Score}">{!v.p1Score}</div>
+                            </td>
+                            <td data-label="Action Required">
+                                <aura:if isTrue="{!empty(v.game.Participant_1__c)}">    
+                                    <div class="slds-truncate slds-show" aura:id="regbt1" >
+                                        <lightning:button variant="success" label="Register yourself" title="Register yourself" onclick="{!c.handleRegCon1}" />
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate">
+                                            ALL SET
+                                        </div>
+                                    </aura:set>
+                                </aura:if>     
+                            </td>
+                               
+                        </tr>
+                        <tr class="slds-truncate">
+                            <td data-label="Sl.No.">
+                            <div class="slds-truncate" title="Participant 2">Participant 2</div>
+                            </td>
+                            <td data-label="Phone">
+                                <aura:if isTrue="{!not(empty(v.game.Participant_2__c))}">
+                                    <div class="slds-truncate" title="{!v.game.Participant_2__r.Phone}">{!v.game.Participant_2__r.Phone}</div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate" title="{!v.unregp2}">{!v.unregp2}</div>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td data-label="Name">
+                            <div class="slds-truncate" title="{!v.game.Participant_2__r.Name}">{!v.game.Participant_2__r.Name}</div>
+                            </td>
+                            <td data-label="Score">
+                            <div class="slds-truncate" title="{!v.p2Score}">{!v.p2Score}</div>
+                            </td>
+                            <td data-label="Action Required">
+                                <aura:if isTrue="{!empty(v.game.Participant_2__c)}">    
+                                    <div class="slds-truncate slds-show" aura:id="regbt2" >
+                                        <lightning:button variant="success" label="Register yourself" title="Register yourself" onclick="{!c.handleRegCon2}" />
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate">
+                                            ALL SET
+                                        </div>
+                                    </aura:set>
+                                </aura:if>     
+                            </td>
+                        </tr>
+                        <tr class="slds-truncate">
+                            <td data-label="Sl.No.">
+                            <div class="slds-truncate" title="Participant 3">Participant 3</div>
+                            </td>
+                            <td data-label="Phone">
+                                <aura:if isTrue="{!not(empty(v.game.Participant_3__c))}">
+                                    <div class="slds-truncate" title="{!v.game.Participant_3__r.Phone}">{!v.game.Participant_3__r.Phone}</div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate" title="{!v.unregp3}">{!v.unregp3}</div>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td data-label="Name">
+                            <div class="slds-truncate" title="{!v.game.Participant_3__r.Name}">{!v.game.Participant_3__r.Name}</div>
+                            </td>
+                            <td data-label="Score">
+                            <div class="slds-truncate" title="{!v.p3Score}">{!v.p3Score}</div>
+                            </td>
+                            <td data-label="Action Required">
+                                <aura:if isTrue="{!empty(v.game.Participant_3__c)}">    
+                                    <div class="slds-truncate slds-show" aura:id="regbt3" >
+                                        <lightning:button variant="success" label="Register yourself" title="Register yourself" onclick="{!c.handleRegCon3}" />
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate">
+                                            ALL SET
+                                        </div>
+                                    </aura:set>
+                                </aura:if>     
+                            </td>    
+                        </tr>
+                        <tr class="slds-truncate">
+                            <td data-label="Sl.No.">
+                            <div class="slds-truncate" title="Participant 4">Participant 4</div>
+                            </td>
+                            <td data-label="Phone">
+                                <aura:if isTrue="{!not(empty(v.game.Participant_4__c))}">
+                                    <div class="slds-truncate" title="{!v.game.Participant_4__r.Phone}">{!v.game.Participant_4__r.Phone}</div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate" title="{!v.unregp4}">{!v.unregp4}</div>
+                                    </aura:set>
+                                </aura:if>
+                            </td>
+                            <td data-label="Name">
+                            <div class="slds-truncate" title="{!v.game.Participant_4__r.Name}">{!v.game.Participant_4__r.Name}</div>
+                            </td>
+                            <td data-label="Score">
+                            <div class="slds-truncate" title="{!v.p4Score}">{!v.p4Score}</div>
+                            </td>
+                            <td data-label="Action Required">
+                                <aura:if isTrue="{!empty(v.game.Participant_4__c)}">    
+                                    <div class="slds-truncate slds-show" aura:id="regbt4" >
+                                        <lightning:button variant="success" label="Register yourself" title="Register yourself" onclick="{!c.handleRegCon4}" />
+                                    </div>
+                                    <aura:set attribute="else">
+                                        <div class="slds-truncate">
+                                            ALL SET
+                                        </div>
+                                    </aura:set>
+                                </aura:if>     
+                            </td>   
+                        </tr>
+                    </tbody>
+                </table>
+                   
+                <div class="row" aura:id="readybutton">
+                    <div class="slds-p-around_small">
+                        <lightning:button variant="brand" label="Ready" title="Ready" onclick="{! c.handleGetQuest }" />
+                    </div>
+                </div>
+                <!--<div class="row">
+                    <div>
+                        {!v.message}
+                    </div>    
+                </div>-->	
+            </div>    
+        </div>
+    </lightning:card>
+
+    <div class="slds-modal__content slds-p-around–medium slds-hide" aura:id="showquestion">
+        <aura:if isTrue="{! not(empty(v.questions)) }"> 
+            <div class="slds-m-bottom_medium"></div>                         
+            <lightning:card aura:id="questionr" title="Question:">
+                <!--<div class="slds-modal__content">{!v.selquest.Question__c}</div> -->
+                <lightning:textarea name="input2" label="Textarea field with a predefined value" readonly="true" value="{!v.selquest.Question__c}" />
+            </lightning:card>
+            
+            <lightning:button variant="success" label="Who gave the right answer" title="Who gave the right answer" onclick="{!c.chkansw}" aura:id="chkbut" disabled="false" />
+            <lightning:button variant="brand" label="Next Question" title="Next Question" onclick="{!c.handleNextQuest}" aura:id="nxtbut" disabled="false" />
+            <lightning:button variant="brand" label="Finish Game" title="Finish Game" onclick="{!c.handleshowWinner}" aura:id="finishbut" disabled="true" />
+            
+        </aura:if>
+    </div>
+    
+    <lightning:card title="Winner is: " aura:id="showWinner" class="slds-hide">
+    	{!v.winner}
+    </lightning:card>
+    
+    <lightning:card title="Register as Contact: " aura:id="regContact" class="slds-hide">
+        <div class="slds">
+            <div class="slds-col slds-size_6-of-12  slds-m-bottom--small">
+                <div class="slds-form-element">
+                   <label class="slds-form-element__label">First Name</label>
+                   <div class="slds-form-element__controller"><ui:inputText aura:id="fName" value="{!v.contact.FirstName}" class="slds-input" placeholder=""/></div>
+                </div>    
+            </div>
+           
+            <div class="slds-grid slds-wrap"> 
+                <div class="slds-col slds-size_6-of-12  slds-m-bottom--small">
+                    <div class="slds-form-element"> 
+                        <label class="slds-form-element__label">Last Name</label>
+                        <div class="slds-form-element__controller">
+                            <ui:inputText aura:id="lName" value="{!v.contact.LastName}" class="slds-input" placeholder=""/>
+                        </div>
+                    </div> 
+                </div> 
+            </div>
+               
+            <div class="slds-grid slds-wrap"> 
+                <div class="slds-col slds-size_6-of-12  slds-m-bottom--small">
+                    <div class="slds-form-element"> 
+                        <label class="slds-form-element__label">Phone</label>
+                        <div class="slds-form-element__controller">
+                            <ui:inputText aura:id="phone" value="{!v.contact.Phone}" class="slds-input" placeholder=""/>
+                        </div>
+                    </div> 
+                </div> 
+            </div> 
+            
+            <div class="slds-grid slds-wrap"> 
+                <div class="slds-col slds-size_6-of-12  slds-m-bottom--small">
+                    <div class="slds-form-element"> 
+                        <label class="slds-form-element__label">Email</label>
+                        <div class="slds-form-element__controller">
+                            <ui:inputText aura:id="emailId" value="{!v.contact.Email}" class="slds-input" placeholder=""/>
+                         </div>
+                    </div> 
+                </div> 
+            </div>
+                       
+            <div class="slds-text-align--center slds-m-top--medium">
+                <button class="slds-button slds-button--brand" onclick="{!c.submitContact}">Register as Contact</button>
+            </div>
+        
+    	</div>
+    </lightning:card>
+</aura:component>
